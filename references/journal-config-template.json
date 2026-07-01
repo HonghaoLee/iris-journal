@@ -1,0 +1,9 @@
+{
+  "_comment": "复制此文件为 journal-config.json 并填写各字段。带 _comment 的键仅作说明，可删除。",
+  "USERNAME": "",
+  "_USERNAME_comment": "日记文件所属用户名，用于目录和索引分组，确认后不建议修改",
+  "JOURNAL_DIR": "",
+  "_JOURNAL_DIR_comment": "日记根目录绝对路径，例如 /home/user/journals",
+  "initialized": true,
+  "_initialized_comment": "初始化完成标记，由初始化流程自动写入，请勿手动改为 false"
+}

@@ -1,0 +1,7 @@
+{
+  "_comment": "分月索引文件：index/{USERNAME}-YYYY-MM.json。由 Agent 自动维护，请勿手动修改。",
+  "last_updated": "{ISO-DATETIME}",
+  "journals": {
+    "{USERNAME}": {}
+  }
+}

@@ -110,11 +110,15 @@ JOURNAL_DIR/
 
 ### S0 入口判断
 
-**技能安装后首次调用时强制触发初始化。**
+**每次调用时，按以下顺序探测已有配置，找到即跳过初始化直接进入日记生成：**
 
-已初始化判断：
-- `JOURNAL_DIR/journal-config.json` 存在且 `initialized` 为 `true` → 跳过初始化，直接进入日记生成
-- 否则触发完整初始化
+1. `{CWD}/journals/journal-config.json`（当前工作目录下，最优先）
+2. `{CWD}/journal-config.json`
+3. `~/journals/journal-config.json`
+
+读取找到的文件，验证 `initialized` 为 `true` 且 `USERNAME` / `JOURNAL_DIR` 非空 → 跳过初始化，直接进入日记生成。
+
+> ⚠️ **不得跳过探测直接走初始化**。新会话无记忆，但 config 文件持久存在于磁盘，必须主动查找。只有三个路径全部不存在或 config 无效时，才触发完整初始化流程。
 
 ### S1 识别用户名
 
@@ -152,7 +156,12 @@ JOURNAL_DIR/
 
 ### 第 1 步：读取配置
 
-读取 `JOURNAL_DIR/journal-config.json`，校验 `USERNAME` 和 `JOURNAL_DIR` 非空。
+按顺序探测 config 文件：
+1. `{CWD}/journals/journal-config.json`
+2. `{CWD}/journal-config.json`
+3. `~/journals/journal-config.json`
+
+取第一个存在且有效的文件，校验 `USERNAME` 和 `JOURNAL_DIR` 非空。若均未找到，终止并提示用户先触发初始化。
 
 ### 第 2 步：收集上下文
 

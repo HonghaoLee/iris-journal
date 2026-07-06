@@ -110,15 +110,16 @@ JOURNAL_DIR/
 
 ### S0 入口判断
 
-**每次调用时，按以下顺序探测已有配置，找到即跳过初始化直接进入日记生成：**
+**每次调用时，按以下顺序定位已有配置：**
 
-1. `{CWD}/journals/journal-config.json`（当前工作目录下，最优先）
-2. `{CWD}/journal-config.json`
-3. `~/journals/journal-config.json`
+1. 读取全局指针文件 `~/.iris-journal`，取其中记录的 config 绝对路径
+2. 若指针不存在，探测以下路径：
+   - `{CWD}/journals/journal-config.json`
+   - `{CWD}/journal-config.json`
 
-读取找到的文件，验证 `initialized` 为 `true` 且 `USERNAME` / `JOURNAL_DIR` 非空 → 跳过初始化，直接进入日记生成。
+读取找到的 config，验证 `initialized` 为 `true` 且 `USERNAME` / `JOURNAL_DIR` 非空 → 跳过初始化，直接进入日记生成。
 
-> ⚠️ **不得跳过探测直接走初始化**。新会话无记忆，但 config 文件持久存在于磁盘，必须主动查找。只有三个路径全部不存在或 config 无效时，才触发完整初始化流程。
+> ⚠️ **不得跳过探测直接走初始化**。新会话无记忆，但 config 文件持久存在于磁盘，必须主动查找。全局指针和探测路径均未命中时，才触发完整初始化流程。
 
 ### S1 识别用户名
 
@@ -147,8 +148,9 @@ JOURNAL_DIR/
 1. `USERNAME` / `JOURNAL_DIR` / `initialized` 字段均非空
 2. `JOURNAL_DIR` 可写（必要时创建目录）
 3. 写入 `JOURNAL_DIR/journal-config.json`（含 `"initialized": true`）
-4. 若 `JOURNAL_DIR/index/` 目录不存在则创建。读取 `references/journal-index-template.json` 内容，替换 `{USERNAME}` 和 `{ISO-DATETIME}` 占位符后写入 `JOURNAL_DIR/index/{USERNAME}-YYYY-MM.json`（其中 `YYYY-MM` 为当前年月）
-5. 展示配置摘要
+4. **写入全局指针**：将 `JOURNAL_DIR/journal-config.json` 的绝对路径写入 `~/.iris-journal`（单行纯文本）
+5. 若 `JOURNAL_DIR/index/` 目录不存在则创建。读取 `references/journal-index-template.json` 内容，替换 `{USERNAME}` 和 `{ISO-DATETIME}` 占位符后写入 `JOURNAL_DIR/index/{USERNAME}-YYYY-MM.json`（其中 `YYYY-MM` 为当前年月）
+6. 展示配置摘要
 
 ---
 
@@ -156,10 +158,9 @@ JOURNAL_DIR/
 
 ### 第 1 步：读取配置
 
-按顺序探测 config 文件：
-1. `{CWD}/journals/journal-config.json`
-2. `{CWD}/journal-config.json`
-3. `~/journals/journal-config.json`
+按顺序定位 config 文件：
+1. 读取全局指针 `~/.iris-journal`，取其中记录的 config 绝对路径
+2. 若指针不存在，探测 `{CWD}/journals/journal-config.json`、`{CWD}/journal-config.json`
 
 取第一个存在且有效的文件，校验 `USERNAME` 和 `JOURNAL_DIR` 非空。若均未找到，终止并提示用户先触发初始化。
 
@@ -273,7 +274,7 @@ JOURNAL_DIR/
 
 | 场景 | 行为 | 恢复方式 |
 |------|------|---------|
-| `journal-config.json` 不存在 | 自动进入初始化流程（S0），不静默跳过 | 按初始化提示操作即可 |
+| `journal-config.json` 不存在 | 先读全局指针 `~/.iris-journal`，若指针也不存在则触发初始化 | 按初始化提示操作即可 |
 | `JOURNAL_DIR` 不可写 | 报错并说明路径；终止写入 | 检查目录权限：`ls -la ~/journals/` |
 | `USERNAME` 字段为空 | 拒绝继续，提示「未完成初始化，请先运行初始化流程」 | 重新触发技能，完成 S1-S3 |
 | `initialized` 为 `false` | 与「config 不存在」同等处理，触发初始化 | 同上 |

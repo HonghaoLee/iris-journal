@@ -11,13 +11,62 @@ AI 会话天然无记忆，每次对话结束后工作上下文即刻消失。gi
 
 ---
 
-## 文件索引
+## 内嵌模板
 
-| 文件 | 用途 |
-|------|------|
-| `references/journal-template.md` | 日记文件结构模板 |
-| `references/journal-index-template.json` | 分月索引文件模板 |
-| `references/journal-config-template.json` | 配置文件模板 |
+### journal-template.md
+
+新建日志文件和追加时间窗口均基于此模板的时间窗口结构，通过占位符替换生成：
+
+```markdown
+# 工作日志 · {YYYY-MM-DD}
+
+**作者**：{USERNAME}
+**日期**：{YYYY-MM-DD}
+**创建时间**：{ISO-DATETIME}
+
+---
+
+## 时间窗口 #{N} · {HH:MM:SS}
+
+### 完成的任务
+
+- 
+
+### 关键决策
+
+- 
+
+### 遇到的问题与解决方案
+
+- 
+
+### 未完成事项 / 下一步计划
+
+- 
+
+---
+```
+
+### journal-config-template.json
+
+```json
+{
+  "USERNAME": "",
+  "JOURNAL_DIR": "",
+  "initialized": true
+}
+```
+
+### journal-index-template.json
+
+```json
+{
+  "last_updated": "{ISO-DATETIME}",
+  "journals": {
+    "{USERNAME}": {}
+  }
+}
+```
 
 ---
 
@@ -290,7 +339,7 @@ JOURNAL_DIR/
          {
            "index": 1,
            "time": "HH:MM:SS",
-           "summary": "从填充内容中提取的前 200 字符摘要"
+           "summary": "优先取「完成的任务」第一条，不足时补「关键决策」第一条，确保是完整句子，截断在句尾标点处，最长 200 字符"
          }
        ]
      }
@@ -301,7 +350,8 @@ JOURNAL_DIR/
 1. **确定路径**：从索引文件 `JOURNAL_DIR/index/{USERNAME}-YYYY-MM.json` 中读取 `journals[{USERNAME}][{YYYY-MM-DD}].file`，拼接为完整路径
 2. **读取现有文件**：加载目标 `.md` 文件完整内容
 3. **计算窗口序号**：当前 `windows` 数组长度 + 1，即为本次时间窗口编号 `{N}`
-4. **追加内容**：在文件末尾追加新的时间窗口模块：
+4. **追加内容**：取 `journal-template.md` 中的时间窗口结构（`## 时间窗口 #{N}` 起至末尾 `---`），替换占位符后追加到文件末尾，**不重复文件头部（标题、作者、日期）**：
+
    ```markdown
    ## 时间窗口 #{N} · {HH:MM:SS}
 
@@ -330,7 +380,7 @@ JOURNAL_DIR/
      {
        "index": {N},
        "time": "{HH:MM:SS}",
-       "summary": "本次 append 内容的摘要，前 200 字符"
+       "summary": "优先取「完成的任务」第一条，不足时补「关键决策」第一条，截断在句尾标点处，最长 200 字符"
      }
      ```
    - 确保 `windows` 数组按 `index` 升序排列，`file`、`created_at` 字段保持不变
